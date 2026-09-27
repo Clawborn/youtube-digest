@@ -1,3 +1,5 @@
+> **Bilibili edition 1.3.0**: See [BILIBILI.md](BILIBILI.md) for Bilibili page access, native subtitle retrieval, login handling and limitations. Existing AI data handling remains in effect.
+
 # Security Policy
 
 ## Supported versions
