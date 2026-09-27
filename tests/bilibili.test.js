@@ -10,7 +10,7 @@ const video = "BV1a6Yx62EH4";
 const id = `bili:${video}:p2`;
 const pageUrl = `https://www.bilibili.com/video/${video}/?p=2`;
 
-function pageHarness({ tracks, viewCode = 0, playerCode = 0, rows, part = 2, fetchError, onFetch } = {}) {
+function pageHarness({ tracks, viewCode = 0, playerCode = 0, rows, part = 2, fetchError, onFetch, playerIdentity = {} } = {}) {
   const calls = [];
   const sandbox = {
     URL, AbortSignal,
@@ -21,10 +21,10 @@ function pageHarness({ tracks, viewCode = 0, playerCode = 0, rows, part = 2, fet
       if (fetchError) throw fetchError;
       let data;
       if (url.includes("/view?")) {
-        data = { code: viewCode, data: { aid: 123, title: "课程", owner: { name: "老师" }, desc: "介绍",
+        data = { code: viewCode, data: { aid: 123, bvid: video, title: "课程", owner: { name: "老师" }, desc: "介绍",
           pages: [{ page: 1, cid: 111, part: "第一课", duration: 200 }, { page: part, cid: 222, part: "第二课", duration: 300 }] } };
-      } else if (url.includes("/player/v2?")) {
-        data = { code: playerCode, data: { subtitle: { subtitles: tracks ?? [
+      } else if (url.includes("/player/wbi/v2?")) {
+        data = { code: playerCode, data: { aid: 123, bvid: video, cid: 222, ...playerIdentity, subtitle: { subtitles: tracks ?? [
           { lan: "en", subtitle_url: "//aisubtitle.hdslb.com/en.json" },
           { lan: "ai-zh", subtitle_url: "//aisubtitle.hdslb.com/ai.json" },
           { lan: "zh-CN", subtitle_url: "//aisubtitle.hdslb.com/zh.json" },
@@ -128,4 +128,35 @@ test("Bilibili access is limited to its video page; no cookies permission is add
     "https://api.deepseek.com/*", "https://www.bilibili.com/*"]);
   assert.ok(!manifest.permissions.includes("cookies"));
   assert.deepEqual(manifest.content_scripts[1].js, ["platforms.js", "bilibili-content.js"]);
+});
+
+test("the legacy endpoint is never used and verified provenance accompanies captions", async () => {
+  const h = pageHarness();
+  const result = await h.read();
+  assert.ok(h.calls.some(c => c.url.includes('/x/player/wbi/v2?')));
+  assert.ok(h.calls.every(c => !c.url.includes('/x/player/v2?')));
+  assert.equal(videos.validTranscriptSource(id, result.source), true);
+  assert.equal(result.source.cid, '222');
+  assert.equal(h.calls[1].options.cache, 'no-store');
+});
+
+test("mismatched player identity is rejected before downloading captions", async () => {
+  for (const playerIdentity of [{ cid: 111 }, { aid: 456 }, { bvid: 'BV1G2G369EZp' }]) {
+    const h = pageHarness({ playerIdentity });
+    assert.equal((await h.read()).error, 'BILI_IDENTITY_MISMATCH');
+    assert.equal(h.calls.length, 2);
+  }
+});
+
+test("legacy poisoned caches cannot be reused by the panel or note pipeline", () => {
+  const good = {version: 2, videoId: id, part: 2, aid: '123', bvid: video, cid: '222', endpoint: 'wbi/v2'};
+  assert.equal(videos.validTranscriptSource(id, undefined), false);
+  assert.equal(videos.validTranscriptSource(id, {...good, version: 1}), false);
+  assert.equal(videos.validTranscriptSource(id, {...good, part: 1}), false);
+  assert.equal(videos.validTranscriptSource(id, {...good, endpoint: 'v2'}), false);
+  assert.equal(videos.validTranscriptSource(id, good), true);
+  assert.equal(videos.validTranscriptSource('dQw4w9WgXcQ', undefined), true);
+  for (const file of ['sidepanel.js', 'background.js']) {
+    assert.match(fs.readFileSync(path.join(root, file), 'utf8'), /validTranscriptSource\(videoId, cached/);
+  }
 });

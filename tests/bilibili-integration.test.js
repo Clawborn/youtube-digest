@@ -88,7 +88,7 @@ test("a late P1 transcript cannot overwrite the P2 panel or its cache", async ()
   const second = sandbox.startDigest(id, DIGEST_VIDEO.url(id));
   await new Promise(setImmediate);
   assert.equal(requests.length, 2);
-  requests[1].resolve({ success: true, transcript: [{ start: 0, text: "P2" }], transcriptText: "P2" });
+  requests[1].resolve({ success: true, source: {version: 2, videoId: id, part: 2, bvid: "BV1a6Yx62EH4", aid: "123", cid: "222", endpoint: "wbi/v2"}, transcript: [{ start: 0, text: "P2" }], transcriptText: "P2" });
   await second;
   requests[0].resolve({ success: true, transcript: [{ start: 0, text: "P1" }], transcriptText: "P1" });
   await first;

@@ -12,7 +12,7 @@ var DIGEST_BILI = (() => {
     if (!matchesPage()) return fail("VIDEO_CHANGED", "视频已切换，请重试。");
 
     async function getJson(url, credentials = "include") {
-      const r = await fetch(url, { credentials, signal: AbortSignal.timeout(15000) });
+      const r = await fetch(url, { credentials, cache: "no-store", signal: AbortSignal.timeout(15000) });
       if (!r.ok) throw new Error(`B 站请求失败（HTTP ${r.status}），请稍后重试。`);
       return r.json();
     }
@@ -23,6 +23,10 @@ var DIGEST_BILI = (() => {
         return fail("BILI_VIDEO_UNAVAILABLE", "无法读取视频信息，请确认视频可播放后重试。");
       }
       const data = view.data;
+      if ((match[1].startsWith("BV") && data.bvid !== match[1]) ||
+          (match[1].startsWith("av") && String(data.aid) !== match[1].slice(2))) {
+        return fail("BILI_IDENTITY_MISMATCH", "视频信息与当前页面不一致，已停止读取，请刷新重试。");
+      }
       const part = data.pages?.find((p) => p.page === Number(match[2]));
       if (!part) return fail("BILI_PART_UNAVAILABLE", "找不到当前分 P，请刷新视频页面。");
       const info = {
@@ -33,9 +37,15 @@ var DIGEST_BILI = (() => {
       if (!includeTranscript) return matchesPage()
         ? { success: true, info } : fail("VIDEO_CHANGED", "视频已切换，请重试。");
 
-      const player = await getJson(`https://api.bilibili.com/x/player/v2?aid=${data.aid}&cid=${part.cid}`);
+      // The legacy /x/player/v2 endpoint can return unrelated AI captions,
+      // even with matching aid/cid fields. Never fall back to that endpoint.
+      const player = await getJson(`https://api.bilibili.com/x/player/wbi/v2?aid=${data.aid}&cid=${part.cid}`);
       if (player.code !== 0) {
         return fail("BILI_PLAYER_UNAVAILABLE", "无法读取 B 站字幕，请登录 B 站并确认视频可播放后重试。");
+      }
+      if (String(player.data?.aid) !== String(data.aid) ||
+          player.data?.bvid !== data.bvid || String(player.data?.cid) !== String(part.cid)) {
+        return fail("BILI_IDENTITY_MISMATCH", "字幕归属与当前视频/分 P 不一致，已停止读取，请刷新重试。");
       }
       const tracks = player.data?.subtitle?.subtitles || [];
       // Prefer creator-provided Chinese, then AI Chinese, then other tracks.
@@ -60,6 +70,8 @@ var DIGEST_BILI = (() => {
       if (!matchesPage()) return fail("VIDEO_CHANGED", "视频已切换，请重试。");
       if (!transcript.length) return fail("EMPTY_TRANSCRIPT", "B 站返回的字幕为空。");
       return { success: true, info, transcript, language: track.lan || null,
+        source: { version: 2, videoId, aid: String(data.aid), bvid: data.bvid,
+          cid: String(part.cid), part: Number(match[2]), endpoint: "wbi/v2" },
         transcriptText: transcript.map((row) => row.text).join(" "),
         transcriptTextTimestamped: transcript.map((row) => {
           const t = Math.floor(row.start);

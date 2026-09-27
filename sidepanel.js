@@ -21,6 +21,7 @@ let currentTranscript = null;
 let currentTranscriptText = null; // Plain text (for display/export)
 let currentTranscriptTimestamped = null; // With timestamps for AI analysis
 let currentTranscriptLanguage = null;
+let currentTranscriptSource = null;
 let currentVideoTitle = "";
 let currentChannelName = "";
 let currentVideoDescription = "";
@@ -596,6 +597,7 @@ async function startDigest(videoId, videoUrl) {
     currentTranscriptText = cached.transcriptText;
     currentTranscriptTimestamped = cached.transcriptTimestamped;
     currentTranscriptLanguage = cached.transcriptLanguage || null;
+    currentTranscriptSource = cached.source || null;
     isAnalysisLoading = false;
 
     // Restore semantic-segment translations from persistent storage.
@@ -646,6 +648,7 @@ async function startDigest(videoId, videoUrl) {
   currentTranscriptText = null;
   currentTranscriptTimestamped = null;
   currentTranscriptLanguage = null;
+  currentTranscriptSource = null;
   isAnalysisLoading = false;
 
   if (currentVideoTitle || currentChannelName) {
@@ -689,6 +692,11 @@ async function startDigest(videoId, videoUrl) {
     document.getElementById("videoChannel").textContent = currentChannelName;
     document.getElementById("videoInfo").style.display = "block";
   }
+  if (!DIGEST_VIDEO.validTranscriptSource(videoId, transcriptResult.source)) {
+    showError("字幕来源校验失败", "字幕与当前视频不匹配，已停止显示，请重试。");
+    return;
+  }
+  currentTranscriptSource = transcriptResult.source || null;
   currentTranscript = transcriptResult.transcript;
   currentTranscriptText = transcriptResult.transcriptText;
   currentTranscriptTimestamped = transcriptResult.transcriptTextTimestamped;
@@ -1987,6 +1995,7 @@ async function saveToCache(videoId) {
       transcriptText: currentTranscriptText,
       transcriptTimestamped: currentTranscriptTimestamped,
       transcriptLanguage: currentTranscriptLanguage,
+      source: currentTranscriptSource,
       videoTitle: currentVideoTitle,
       channelName: currentChannelName,
       paragraphCache: paragraphCacheForVideo,
@@ -2062,6 +2071,9 @@ async function loadFromCache(videoId) {
     const cached = result[`digest_${videoId}`];
 
     if (!cached) return null;
+    // Ignore unverified 1.3.0 captions and derived summaries/translations.
+    // Keep existing notes and stored data intact; a successful fetch replaces the cache.
+    if (!DIGEST_VIDEO.validTranscriptSource(videoId, cached.source)) return null;
 
     // Cache expires after 30 days
     const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;

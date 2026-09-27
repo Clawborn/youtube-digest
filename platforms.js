@@ -40,6 +40,14 @@ var DIGEST_VIDEO = (() => {
     }
     return u.href;
   }
-  return { parse, fromId, url, supports: (url) => !!parse(url) };
+  function validTranscriptSource(id, source) {
+    const video = fromId(id);
+    if (!video) return false;
+    if (video.platform !== "bilibili") return true;
+    return source?.version === 2 && source.videoId === id && source.part === video.part &&
+      source.endpoint === "wbi/v2" && /^[1-9]\d*$/.test(source.cid || "") &&
+      (video.video.startsWith("BV") ? source.bvid === video.video : source.aid === video.video.slice(2));
+  }
+  return { parse, fromId, url, validTranscriptSource, supports: (url) => !!parse(url) };
 })();
 if (typeof module !== "undefined") module.exports = DIGEST_VIDEO;

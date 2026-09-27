@@ -1189,7 +1189,7 @@ async function handleSaveNote(
     let transcript = null;
     try {
       const cached = await chrome.storage.local.get(`digest_${videoId}`);
-      if (cached[`digest_${videoId}`]?.transcript) {
+      if (cached[`digest_${videoId}`]?.transcript && DIGEST_VIDEO.validTranscriptSource(videoId, cached[`digest_${videoId}`].source)) {
         transcript = cached[`digest_${videoId}`].transcript;
         debugLog("[YouTube Digest] Using cached transcript for note");
       }
