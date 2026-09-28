@@ -1,10 +1,10 @@
 # Video Digest · YouTube + B站
 
-社区预览版 1.3.1，基于 zarazhangrui/youtube-digest v1.2.0（MIT）。原版 YouTube 功能和缓存键保持兼容。
+社区发行版 1.3.1，基于 zarazhangrui/youtube-digest v1.2.0（MIT）。原版 YouTube 功能和缓存键保持兼容。
 
 ## 安装
 
-这是独立社区 fork 的预览版，不是上游官方发行版。当前已通过自动测试和普通 Chrome 的字幕接口对照；重载扩展后的完整侧栏字幕及时间戳跳转验收尚未完成。
+这是独立社区 fork 的发行版，不是上游官方发行版。已通过 83 项自动测试和普通 Chrome 的字幕接口对照；2026-09-28，维护者 Rain 确认已完成人工验收，使用正常。
 
 
 1. 在 Chrome 打开 `chrome://extensions/`，开启开发者模式。
