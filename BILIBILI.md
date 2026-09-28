@@ -1,8 +1,11 @@
 # Video Digest · YouTube + B站
 
-本地改造版 1.3.1，基于 zarazhangrui/youtube-digest v1.2.0（MIT）。原版 YouTube 功能和缓存键保持兼容。
+社区预览版 1.3.1，基于 zarazhangrui/youtube-digest v1.2.0（MIT）。原版 YouTube 功能和缓存键保持兼容。
 
 ## 安装
+
+这是独立社区 fork 的预览版，不是上游官方发行版。当前已通过自动测试和普通 Chrome 的字幕接口对照；重载扩展后的完整侧栏字幕及时间戳跳转验收尚未完成。
+
 
 1. 在 Chrome 打开 `chrome://extensions/`，开启开发者模式。
 2. 点击「加载已解压的扩展程序」，选择包含此文件及 manifest.json 的完整文件夹。

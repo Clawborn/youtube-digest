@@ -1,4 +1,4 @@
-> **Local Bilibili edition 1.3.0**: YouTube + B站。安装、支持范围和隐私差异见 [BILIBILI.md](BILIBILI.md)。以下保留上游说明，其中 YouTube/Supadata 要求仅适用于 YouTube。
+> **Community Bilibili preview 1.3.1**: YouTube + B站。安装、支持范围和隐私差异见 [BILIBILI.md](BILIBILI.md)。以下保留上游说明，其中 YouTube/Supadata 要求仅适用于 YouTube。
 
 # YouTube Digest
 
